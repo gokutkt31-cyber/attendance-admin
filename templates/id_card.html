@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Employee ID Card - {{ employee.full_name }}{% endblock %}
+{% block page_title %}Digital Badge ID{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h5 class="font-bold mb-1">Company Digital Badge</h5>
+            <p class="text-secondary small mb-0">Print or capture this badge for check-ins.</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-sm btn-primary rounded-pill font-semibold px-4"><i class="fas fa-print me-2"></i>Print ID Card</button>
+    </div>
+
+    <div class="id-card-container">
+        <!-- Physical layout ID Card -->
+        <div class="id-card" id="printable-id-card">
+            <!-- Header Logo -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <i class="fas fa-fingerprint fs-4 text-primary"></i>
+                <span class="font-bold small uppercase" style="letter-spacing: 1px; font-family: var(--font-heading)">AMS corporate</span>
+            </div>
+            
+            <!-- Employee Avatar Picture -->
+            <img src="{{ url_for('static', filename='uploads/' + employee.profile_pic) }}" class="id-card-photo" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="Badge avatar">
+            
+            <!-- Employee Meta -->
+            <h4 class="font-bold mb-1" style="font-family: var(--font-heading)">{{ employee.full_name }}</h4>
+            <p class="text-primary font-semibold small mb-2">{{ employee.designation or 'Associate' }}</p>
+            
+            <div class="text-start w-100 px-3 py-2 bg-light bg-opacity-10 rounded mb-3 small" style="border: 1px solid var(--glass-border);">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary font-semibold">ID Code:</span>
+                    <span class="font-bold">{{ employee.employee_id }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-secondary font-semibold">Department:</span>
+                    <span class="font-bold">{{ employee.department.name if employee.department else 'N/A' }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-secondary font-semibold">Joined:</span>
+                    <span class="font-bold">{{ employee.date_of_joining.strftime('%d-%m-%Y') }}</span>
+                </div>
+            </div>
+            
+            <!-- QR Verification scanner token -->
+            <div class="id-card-qr shadow-sm mt-auto" id="id-qrcode-placeholder"></div>
+            <p class="text-muted small mt-2 mb-0" style="font-size: 0.65rem;">AUTHORIZED SYSTEM KEY</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Printable ID Card layout override styling rules -->
+<style>
+@media print {
+    .bg-shapes, .sidebar, .top-navbar, .mb-4 {
+        display: none !important;
+    }
+    body {
+        background: none !important;
+    }
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .id-card-container {
+        padding: 0 !important;
+    }
+    .id-card {
+        border: 2px solid #000 !important;
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QRCode Library JS -->
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load QR Code using employee raw qr details
+        const qrToken = "{{ employee.qr_code }}";
+        if (qrToken) {
+            renderIDCardQRCode('id-qrcode-placeholder', qrToken);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for Leave - Attendance System{% endblock %}
+{% block page_title %}Leave Applications{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <div class="row g-4">
+        
+        <!-- Leave Application Form Card -->
+        <div class="col-lg-4">
+            <div class="glass-card">
+                <h5 class="font-bold mb-4"><i class="fas fa-edit text-primary me-2"></i>Apply for Leave</h5>
+                
+                <form method="POST" action="{{ url_for('main.apply_leave') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="leave_type" class="form-label font-semibold small">Leave Type</label>
+                        {{ form.leave_type(class="form-select", id="leave_type") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label font-semibold small">Start Date</label>
+                        {{ form.start_date(class="form-control", id="start_date", type="date") }}
+                        {% if form.start_date.errors %}
+                            {% for error in form.start_date.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label font-semibold small">End Date</label>
+                        {{ form.end_date(class="form-control", id="end_date", type="date") }}
+                        {% if form.end_date.errors %}
+                            {% for error in form.end_date.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="reason" class="form-label font-semibold small">Reason for Leave</label>
+                        {{ form.reason(class="form-control", id="reason", rows=3, placeholder="State purpose of leave application") }}
+                        {% if form.reason.errors %}
+                            {% for error in form.reason.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-primary w-100 py-3") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- Personal Leave Request Logs list -->
+        <div class="col-lg-8">
+            <div class="glass-card h-100">
+                <h5 class="font-bold mb-4"><i class="fas fa-history text-primary me-2"></i>My Leave History</h5>
+                
+                <div class="glass-table-container">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>Dates Range</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Admin Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in leaves %}
+                            <tr>
+                                <td class="font-bold small text-primary">{{ r.leave_type }}</td>
+                                <td class="small">{{ r.start_date.strftime('%d-%m-%Y') }} to {{ r.end_date.strftime('%d-%m-%Y') }}</td>
+                                <td class="small font-semibold">{{ ((r.end_date - r.start_date).days + 1) }} Days</td>
+                                <td class="small text-truncate" style="max-width: 150px;" title="{{ r.reason }}">{{ r.reason }}</td>
+                                <td>
+                                    <span class="status-badge {{ r.status | lower }}">
+                                        {{ r.status }}
+                                    </span>
+                                </td>
+                                <td class="small text-secondary italic">{{ r.comments or '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">No leave requests logged.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

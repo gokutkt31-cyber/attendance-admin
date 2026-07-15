@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Employee Attendance Management System{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Toastify JS CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    
+    <!-- AOS Scroll Animation CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom Style System -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Floating Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <!-- Sidebar Navigation Drawer -->
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar" id="sidebar">
+            <a href="{{ url_for('main.dashboard') }}" class="sidebar-logo">
+                <i class="fas fa-fingerprint"></i>
+                <span>AMS Portal</span>
+            </a>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                {% if current_user.role == 'employee' %}
+                <li>
+                    <a href="{{ url_for('main.attendance') }}" class="sidebar-link {% if request.endpoint == 'main.attendance' %}active{% endif %}">
+                        <i class="fas fa-camera"></i>
+                        <span>Check In / Out</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('main.apply_leave') }}" class="sidebar-link {% if request.endpoint == 'main.apply_leave' %}active{% endif %}">
+                        <i class="fas fa-calendar-minus"></i>
+                        <span>Apply Leave</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role in ['admin', 'hr'] %}
+                <li>
+                    <a href="{{ url_for('main.employees') }}" class="sidebar-link {% if request.endpoint == 'main.employees' %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>Employees</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('main.manage_leaves') }}" class="sidebar-link {% if request.endpoint == 'main.manage_leaves' %}active{% endif %}">
+                        <i class="fas fa-file-signature"></i>
+                        <span>Leave Requests</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li>
+                    <a href="{{ url_for('main.reports') }}" class="sidebar-link {% if request.endpoint == 'main.reports' %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports Audit</span>
+                    </a>
+                </li>
+                
+                {% if current_user.role == 'admin' %}
+                <li>
+                    <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if request.endpoint == 'main.settings' %}active{% endif %}">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>System Settings</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="mt-auto">
+                    <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
+                        <i class="fas fa-user-cog"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('main.logout') }}" class="sidebar-link text-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Log Out</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        {% endif %}
+
+        <!-- Main View Area -->
+        <main class="main-content">
+            <!-- Navbar Header -->
+            {% if current_user.is_authenticated %}
+            <nav class="top-navbar" data-aos="fade-down">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="sidebar-toggler" id="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    </div>
+                </div>
+                
+                <div class="navbar-actions">
+                    <!-- Light / Dark Theme Button -->
+                    <button class="theme-toggle-btn" id="theme-toggle" title="Switch Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <!-- Profile link -->
+                    <div class="dropdown">
+                        <a href="#" class="user-profile-trigger dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if current_user.employee_profile and current_user.employee_profile.profile_pic %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.employee_profile.profile_pic) }}" class="avatar-sm" alt="Avatar">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='images/default.jpg') }}" class="avatar-sm" alt="Avatar">
+                            {% endif %}
+                            <span class="d-none d-sm-inline">{{ current_user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm glass-panel p-2" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item rounded" href="{{ url_for('main.profile') }}"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            {% if current_user.role == 'employee' and current_user.employee_profile %}
+                            <li><a class="dropdown-item rounded" href="{{ url_for('main.generate_id_card', emp_id=current_user.employee_profile.id) }}"><i class="fas fa-id-card me-2"></i> ID Card</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider bg-light"></li>
+                            <li><a class="dropdown-item text-danger rounded" href="{{ url_for('main.logout') }}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            {% endif %}
+
+            <!-- Page Content Body -->
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden element to render Flask flashes as toasts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <span class="flask-flash-msg d-none" data-message="{{ message }}" data-category="{{ category }}"></span>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- AOS Scroll Animation JS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <!-- Core Application Interactions JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

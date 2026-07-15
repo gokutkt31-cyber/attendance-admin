@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Audit Reports - AMS{% endblock %}
+{% block page_title %}Audit Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    
+    <!-- Filter Panel -->
+    <div class="glass-card mb-4">
+        <h5 class="font-bold mb-3"><i class="fas fa-filter text-primary me-2"></i>Filter Options</h5>
+        
+        <form method="GET" action="{{ url_for('main.reports') }}" class="row g-3 align-items-end">
+            <!-- Date Filters -->
+            <div class="col-md-3 col-sm-6">
+                <label for="start_date" class="form-label small font-semibold">Start Date</label>
+                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date or '' }}">
+            </div>
+            
+            <div class="col-md-3 col-sm-6">
+                <label for="end_date" class="form-label small font-semibold">End Date</label>
+                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date or '' }}">
+            </div>
+            
+            <!-- Employee Filter (Admin/HR Only) -->
+            {% if current_user.role in ['admin', 'hr'] %}
+            <div class="col-md-3 col-sm-6">
+                <label for="employee_id" class="form-label small font-semibold">Select Employee</label>
+                <select name="employee_id" id="employee_id" class="form-select">
+                    <option value="">All Employees</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}" {% if selected_emp == emp.id %}selected{% endif %}>
+                        {{ emp.full_name }} ({{ emp.employee_id }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            
+            <!-- Submit Actions -->
+            <div class="col-md-3 col-sm-6">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-2"></i>Search</button>
+                    <a href="{{ url_for('main.reports') }}" class="btn btn-outline-secondary w-100"><i class="fas fa-redo me-2"></i>Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Export Action Buttons row -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h5 class="font-bold mb-0">Record Audit Log</h5>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-sm btn-outline-secondary rounded-pill font-semibold px-3"><i class="fas fa-print me-2"></i>Print Table</button>
+            <a href="{{ url_for('main.export_excel', start_date=start_date, end_date=end_date, employee_id=selected_emp) }}" class="btn btn-sm btn-outline-success rounded-pill font-semibold px-3"><i class="fas fa-file-excel me-2"></i>Export Excel</a>
+            <a href="{{ url_for('main.export_csv', start_date=start_date, end_date=end_date, employee_id=selected_emp) }}" class="btn btn-sm btn-outline-info rounded-pill font-semibold px-3"><i class="fas fa-file-csv me-2"></i>Export CSV</a>
+            <a href="{{ url_for('main.export_pdf', start_date=start_date, end_date=end_date, employee_id=selected_emp) }}" class="btn btn-sm btn-outline-danger rounded-pill font-semibold px-3"><i class="fas fa-file-pdf me-2"></i>Export PDF</a>
+        </div>
+    </div>
+
+    <!-- Records Glass Table -->
+    <div class="glass-card">
+        <div class="glass-table-container">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Working Hours</th>
+                        <th>Overtime</th>
+                        <th>Status</th>
+                        <th>Late Entry</th>
+                        <th class="text-end">Certificate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td class="font-semibold small">{{ record.employee.employee_id }}</td>
+                        <td class="small">{{ record.employee.full_name }}</td>
+                        <td class="small">{{ record.date.strftime('%B %d, %Y') }}</td>
+                        <td class="small font-semibold">{{ record.check_in_time.strftime('%I:%M:%S %p') if record.check_in_time else '-' }}</td>
+                        <td class="small font-semibold">{{ record.check_out_time.strftime('%I:%M:%S %p') if record.check_out_time else '-' }}</td>
+                        <td class="small font-bold text-primary">{{ record.working_hours or '-' }} hrs</td>
+                        <td class="small text-secondary">{{ record.overtime or '-' }} hrs</td>
+                        <td>
+                            <span class="status-badge {{ record.status | lower | replace(' ', '-') }}">
+                                {{ record.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if record.late_entry %}
+                            <span class="text-warning small font-bold"><i class="fas fa-exclamation-triangle me-1"></i>Yes</span>
+                            {% else %}
+                            <span class="text-success small">No</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if record.check_in_time %}
+                            <a href="{{ url_for('main.download_certificate', att_id=record.id) }}" class="btn btn-sm btn-outline-primary rounded-circle" title="Download Audit Slip">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-4">No records found matching filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Printable layout styling override -->
+<style>
+@media print {
+    .bg-shapes, .sidebar, .top-navbar, .glass-card:first-child, .mb-4:nth-child(2) {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    .glass-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+    .glass-table th {
+        background: #f8fafc !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    .glass-table td {
+        border-bottom: 1px solid #ddd !important;
+    }
+}
+</style>
+{% endblock %}

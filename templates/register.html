@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center py-5" style="min-height: 90vh;">
+    <div class="glass-card w-100 p-4 p-md-5" style="max-width: 600px;" data-aos="zoom-in">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style="width: 60px; height: 60px; font-size: 1.75rem;">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h2 class="h3 font-bold mb-1" style="font-family: var(--font-heading)">Create Account</h2>
+            <p class="text-muted small">Register to start tracking attendance logs and requesting leaves.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.register') }}">
+            {{ form.hidden_tag() }}
+            
+            <h5 class="font-bold border-bottom pb-2 mb-3 text-secondary small uppercase tracking-wider">Account Credentials</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="username" class="form-label font-semibold small">Username *</label>
+                    {{ form.username(class="form-control", id="username", placeholder="Choose username") }}
+                    {% if form.username.errors %}
+                        {% for error in form.username.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label font-semibold small">Email Address *</label>
+                    {{ form.email(class="form-control", id="email", placeholder="Enter email") }}
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label font-semibold small">Password *</label>
+                    {{ form.password(class="form-control", id="password", placeholder="Create password") }}
+                    {% if form.password.errors %}
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="confirm_password" class="form-label font-semibold small">Confirm Password *</label>
+                    {{ form.confirm_password(class="form-control", id="confirm_password", placeholder="Repeat password") }}
+                    {% if form.confirm_password.errors %}
+                        {% for error in form.confirm_password.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="role" class="form-label font-semibold small">Role *</label>
+                {{ form.role(class="form-select", id="role") }}
+            </div>
+            
+            <h5 class="font-bold border-bottom pb-2 mb-3 mt-4 text-secondary small uppercase tracking-wider">Employee Profile Details</h5>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="first_name" class="form-label font-semibold small">First Name *</label>
+                    {{ form.first_name(class="form-control", id="first_name", placeholder="Enter first name") }}
+                    {% if form.first_name.errors %}
+                        {% for error in form.first_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="last_name" class="form-label font-semibold small">Last Name *</label>
+                    {{ form.last_name(class="form-control", id="last_name", placeholder="Enter last name") }}
+                    {% if form.last_name.errors %}
+                        {% for error in form.last_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label font-semibold small">Phone Number</label>
+                    {{ form.phone(class="form-control", id="phone", placeholder="Enter phone number") }}
+                    {% if form.phone.errors %}
+                        {% for error in form.phone.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="designation" class="form-label font-semibold small">Designation</label>
+                    {{ form.designation(class="form-control", id="designation", placeholder="e.g. Software Engineer") }}
+                    {% if form.designation.errors %}
+                        {% for error in form.designation.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="department_id" class="form-label font-semibold small">Department *</label>
+                {{ form.department_id(class="form-select", id="department_id") }}
+            </div>
+            
+            {{ form.submit(class="btn btn-primary w-100 py-3") }}
+        </form>
+        
+        <div class="text-center mt-4">
+            <span class="text-secondary small">Already registered? </span>
+            <a href="{{ url_for('main.login') }}" class="text-primary font-semibold small text-decoration-none">Log In Here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

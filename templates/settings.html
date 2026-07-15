@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings - Attendance Portal{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <div class="row g-4">
+        
+        <!-- Shift Config settings card -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="font-bold mb-4"><i class="fas fa-business-time text-primary me-2"></i>Shift Settings</h5>
+                
+                <form method="POST" action="{{ url_for('main.settings') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="check_in_start_time" class="form-label font-semibold small">Shift Check-In Time</label>
+                        {{ form.check_in_start_time(class="form-control", id="check_in_start_time", placeholder="e.g. 09:00:00") }}
+                        <div class="text-muted small mt-1">Expected daily start time (HH:MM:SS format).</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="check_in_grace_period_mins" class="form-label font-semibold small">Grace Period (Minutes)</label>
+                        {{ form.check_in_grace_period_mins(class="form-control", id="check_in_grace_period_mins") }}
+                        <div class="text-muted small mt-1">Allowed delay after start time before flagged late.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary px-4 py-3 w-100"><i class="fas fa-save me-2"></i>Save Configuration</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- GPS Limits config settings card -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="font-bold mb-4"><i class="fas fa-map-marker-alt text-primary me-2"></i>GPS Proximity Coordinates</h5>
+                
+                <form method="POST" action="{{ url_for('main.settings') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="allowed_gps_latitude" class="form-label font-semibold small">Office Latitude</label>
+                            {{ form.allowed_gps_latitude(class="form-control", id="allowed_gps_latitude") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="allowed_gps_longitude" class="form-label font-semibold small">Office Longitude</label>
+                            {{ form.allowed_gps_longitude(class="form-control", id="allowed_gps_longitude") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="allowed_gps_radius_meters" class="form-label font-semibold small">Proximity Radius Limit (Meters)</label>
+                        {{ form.allowed_gps_radius_meters(class="form-control", id="allowed_gps_radius_meters") }}
+                        <div class="text-muted small mt-1">Maximum allowed check-in distance from office coordinates.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary px-4 py-3 w-100"><i class="fas fa-save me-2"></i>Save Coordinates</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Mark Attendance - Attendance Management System{% endblock %}
+{% block page_title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <div class="row g-4">
+        
+        <!-- Webcam Capture & Action Buttons -->
+        <div class="col-lg-6">
+            <div class="glass-card h-100">
+                <h5 class="font-bold mb-4"><i class="fas fa-video me-2 text-primary"></i>Webcam Selfie Verification</h5>
+                
+                <div class="d-flex flex-column align-items-center mb-4">
+                    <!-- Webcam Stream Feed Container -->
+                    <div class="webcam-container mb-3 shadow">
+                        <video id="webcam-feed" class="webcam-feed" autoplay playsinline></video>
+                        <canvas id="selfie-canvas" style="display: none;"></canvas>
+                        <div class="webcam-overlay" id="camera-placeholder">
+                            <div class="text-center">
+                                <i class="fas fa-camera fs-1 mb-2 opacity-50"></i>
+                                <p class="mb-0 small text-secondary">Click 'Start Camera' below to capture check-in frame</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button onclick="initWebcam()" class="btn btn-sm btn-outline-primary rounded-pill font-semibold px-3"><i class="fas fa-power-off me-2"></i>Start Camera</button>
+                        <button onclick="stopWebcam()" class="btn btn-sm btn-outline-danger rounded-pill font-semibold px-3"><i class="fas fa-stop me-2"></i>Stop Camera</button>
+                    </div>
+                </div>
+                
+                <!-- GPS Proximity Indicator panel -->
+                <div class="glass-panel p-3 mb-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-secondary small font-semibold d-block">Location Coordinates</span>
+                            <span class="font-bold text-primary small">
+                                Lat: <span id="gps-lat-val">-</span>, Lng: <span id="gps-lng-val">-</span>
+                            </span>
+                        </div>
+                        <button onclick="initGPS()" class="btn btn-sm btn-outline-secondary rounded-pill font-semibold px-3"><i class="fas fa-map-marker-alt me-2"></i>Locate Me</button>
+                    </div>
+                    <div class="text-muted small mt-2 border-top pt-2">
+                        <i class="fas fa-info-circle me-1 text-primary"></i> GPS verification requires matching coordinates within <b>{{ radius }}m</b> from office boundaries.
+                    </div>
+                </div>
+
+                <!-- Submission Actions -->
+                <div class="d-flex gap-3">
+                    {% if not attendance %}
+                    <button onclick="triggerCheckIn()" id="checkin-btn" class="btn btn-primary w-100 py-3 font-bold"><i class="fas fa-sign-in-alt me-2"></i>Check In Presence</button>
+                    {% elif attendance and not attendance.check_out_time %}
+                    <button onclick="triggerCheckOut()" id="checkout-btn" class="btn btn-warning w-100 py-3 font-bold text-white"><i class="fas fa-sign-out-alt me-2"></i>Check Out Shift</button>
+                    {% else %}
+                    <div class="glass-panel w-100 text-center py-3 border-success text-success font-semibold">
+                        <i class="fas fa-check-double me-2"></i>Attendance logged successfully for today.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Verification and Calendar Heatmap -->
+        <div class="col-lg-6">
+            <div class="row g-4">
+                
+                <!-- My ID Card QR Code -->
+                <div class="col-12">
+                    <div class="glass-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="font-bold mb-1">My ID Scanner QR</h5>
+                                <p class="text-secondary small mb-0">Present this QR code to the company terminal camera.</p>
+                            </div>
+                            <i class="fas fa-qrcode fs-3 text-primary"></i>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-center py-3">
+                            <div class="glass-panel p-3 bg-white" style="border-radius: 16px;">
+                                <div id="my-qrcode"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Heatmap Panel -->
+                <div class="col-12">
+                    <div class="glass-card">
+                        <h5 class="font-bold mb-3"><i class="fas fa-calendar-alt me-2 text-primary"></i>Attendance History Tracker</h5>
+                        <p class="text-secondary small mb-4">Color codes show daily logged status. Hover days to view details.</p>
+                        
+                        <div class="calendar-heatmap" id="heatmap-calendar" data-history='{{ history_json | tojson }}'>
+                            <!-- Custom grid generated dynamically in JS -->
+                        </div>
+                        
+                        <!-- Heatmap Legend indicators -->
+                        <div class="d-flex justify-content-center gap-3 flex-wrap mt-4 border-top pt-3">
+                            <span class="small font-semibold d-flex align-items-center gap-1"><span class="badge bg-success rounded-circle" style="width: 10px; height: 10px; padding: 0;">&nbsp;</span> Present</span>
+                            <span class="small font-semibold d-flex align-items-center gap-1"><span class="badge bg-danger rounded-circle" style="width: 10px; height: 10px; padding: 0;">&nbsp;</span> Absent</span>
+                            <span class="small font-semibold d-flex align-items-center gap-1"><span class="badge bg-warning rounded-circle" style="width: 10px; height: 10px; padding: 0;">&nbsp;</span> Late Entry</span>
+                            <span class="small font-semibold d-flex align-items-center gap-1"><span class="badge bg-info rounded-circle" style="width: 10px; height: 10px; padding: 0;">&nbsp;</span> Leave</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QRCode Library JS -->
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<!-- Webcam and Attendance JS Actions -->
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+<!-- Dashboard Specific Scripts (heatmap loader) -->
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render My Attendance Card QR Code
+        const token = "{{ qr_token }}";
+        if (token) {
+            renderIDCardQRCode('my-qrcode', token);
+        }
+        
+        // Hide Camera placeholder on feed start
+        const video = document.getElementById('webcam-feed');
+        const placeholder = document.getElementById('camera-placeholder');
+        
+        video.onplay = () => {
+            if (placeholder) placeholder.style.display = 'none';
+        };
+    });
+</script>
+{% endblock %}

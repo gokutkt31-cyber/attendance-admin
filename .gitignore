@@ -1,0 +1,39 @@
+﻿# Environment & Secrets
+.env
+.env.*
+
+# Database (do NOT commit SQLite DB - Render will create fresh)
+*.db
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# User uploaded files
+static/uploads/
+
+# IDE / OS files
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Flask instance folder
+instance/
+
+# Migration temp files
+migrations/versions/__pycache__/
+
+# Logs
+*.log

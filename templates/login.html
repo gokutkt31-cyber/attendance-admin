@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Log In - Attendance Management System{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="glass-card w-100 p-4 p-md-5" style="max-width: 450px;" data-aos="zoom-in">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style="width: 60px; height: 60px; font-size: 1.75rem;">
+                <i class="fas fa-fingerprint"></i>
+            </div>
+            <h2 class="h3 font-bold mb-1" style="font-family: var(--font-heading)">Welcome Back</h2>
+            <p class="text-muted small">Sign in to log daily presence and request leaves.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.login') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                <label for="username" class="form-label font-semibold small">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-user"></i></span>
+                    {{ form.username(class="form-control border-start-0 ps-0", id="username", placeholder="Enter username") }}
+                </div>
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label font-semibold small">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-lock"></i></span>
+                    {{ form.password(class="form-control border-start-0 ps-0", id="password", placeholder="Enter password") }}
+                </div>
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="form-check">
+                    {{ form.remember(class="form-check-input", id="remember") }}
+                    <label class="form-check-label text-secondary small" for="remember">
+                        Remember Me
+                    </label>
+                </div>
+                <a href="{{ url_for('main.forgot_password') }}" class="text-primary small text-decoration-none font-semibold">Forgot Password?</a>
+            </div>
+            
+            {{ form.submit(class="btn btn-primary w-100 py-3") }}
+        </form>
+        
+        <div class="text-center mt-4">
+            <span class="text-secondary small">Don't have an account? </span>
+            <a href="{{ url_for('main.register') }}" class="text-primary font-semibold small text-decoration-none">Sign Up Here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

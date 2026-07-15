@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Attendance System{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+    <div class="row g-4">
+        
+        <!-- Profile Picture & Quick Info Panel -->
+        <div class="col-lg-4">
+            <div class="glass-card text-center">
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="avatar-preview" src="{{ url_for('static', filename='uploads/' + (employee.profile_pic if employee else 'default.jpg')) }}" class="rounded-circle border border-4 border-primary-light" style="width: 150px; height: 150px; object-fit: cover;" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="Profile Avatar">
+                    
+                    <!-- Quick Avatar upload trigger icon -->
+                    <label for="avatar-input" class="btn btn-primary rounded-circle position-absolute bottom-0 end-0 p-0 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border: 3px solid var(--glass-bg);">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="avatar-input" accept="image/*" style="display: none;" onchange="triggerAvatarUpload()">
+                </div>
+                
+                <h4 class="font-bold mb-1">{{ employee.full_name if employee else current_user.username }}</h4>
+                <p class="text-secondary small">{{ employee.designation or 'System User' }}</p>
+                <span class="status-badge rounded-pill font-semibold small px-3" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                    {{ current_user.role | upper }}
+                </span>
+                
+                <div class="mt-4 pt-3 border-top text-start">
+                    <div class="mb-2">
+                        <span class="text-muted small d-block font-semibold">Username</span>
+                        <span class="font-semibold">{{ current_user.username }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted small d-block font-semibold">Email Address</span>
+                        <span class="font-semibold">{{ current_user.email }}</span>
+                    </div>
+                    {% if employee %}
+                    <div class="mb-2">
+                        <span class="text-muted small d-block font-semibold">Department</span>
+                        <span class="font-semibold">{{ employee.department.name if employee.department else 'N/A' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block font-semibold">Date of Joining</span>
+                        <span class="font-semibold">{{ employee.date_of_joining.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile and Password settings Forms -->
+        <div class="col-lg-8">
+            <div class="row g-4">
+                
+                <!-- Personal Info Update Form -->
+                <div class="col-12">
+                    <div class="glass-card">
+                        <h5 class="font-bold mb-4">Edit Profile details</h5>
+                        
+                        <form method="POST" action="{{ url_for('main.profile') }}">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label font-semibold small">First Name</label>
+                                    {{ form.first_name(class="form-control", id="first_name") }}
+                                    {% if form.first_name.errors %}
+                                        {% for error in form.first_name.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label font-semibold small">Last Name</label>
+                                    {{ form.last_name(class="form-control", id="last_name") }}
+                                    {% if form.last_name.errors %}
+                                        {% for error in form.last_name.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label font-semibold small">Email Address</label>
+                                    {{ form.email(class="form-control", id="email") }}
+                                    {% if form.email.errors %}
+                                        {% for error in form.email.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label font-semibold small">Phone Number</label>
+                                    {{ form.phone(class="form-control", id="phone") }}
+                                    {% if form.phone.errors %}
+                                        {% for error in form.phone.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if current_user.role != 'employee' %}
+                            <div class="mb-3">
+                                <label for="designation" class="form-label font-semibold small">Designation</label>
+                                {{ form.designation(class="form-control", id="designation", readonly=True) }}
+                            </div>
+                            {% endif %}
+                            
+                            <button type="submit" name="submit" class="btn btn-primary px-4 mt-2">Update Information</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Password update change form -->
+                <div class="col-12">
+                    <div class="glass-card">
+                        <h5 class="font-bold mb-4">Change Password</h5>
+                        
+                        <form method="POST" action="{{ url_for('main.profile') }}">
+                            {{ password_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label font-semibold small">Current Password</label>
+                                {{ password_form.current_password(class="form-control", id="current_password", placeholder="Enter current password") }}
+                                {% if password_form.current_password.errors %}
+                                    {% for error in password_form.current_password.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="new_password" class="form-label font-semibold small">New Password</label>
+                                    {{ password_form.new_password(class="form-control", id="new_password", placeholder="Minimum 6 characters") }}
+                                    {% if password_form.new_password.errors %}
+                                        {% for error in password_form.new_password.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="confirm_password_p" class="form-label font-semibold small">Confirm New Password</label>
+                                    {{ password_form.confirm_password(class="form-control", id="confirm_password_p", placeholder="Repeat password") }}
+                                    {% if password_form.confirm_password.errors %}
+                                        {% for error in password_form.confirm_password.errors %}
+                                            <div class="text-danger small mt-1">{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <button type="submit" name="change_password" class="btn btn-primary px-4 mt-2">Update Password</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // AJAX trigger upload for profile avatar file
+    async function triggerAvatarUpload() {
+        const fileInput = document.getElementById('avatar-input');
+        if (!fileInput.files || fileInput.files.length === 0) return;
+        
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('avatar', file);
+        
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+        
+        showToast("Uploading profile photo...", "info");
+        
+        try {
+            const response = await fetch('/profile/upload-avatar', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+            const res = await response.json();
+            
+            if (res.success) {
+                showToast("Profile picture updated!", "success");
+                // Update DOM view
+                document.getElementById('avatar-preview').src = `/static/uploads/${res.filename}?v=${new Date().getTime()}`;
+            } else {
+                showToast(res.message, "danger");
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+            showToast("Failed to upload avatar.", "danger");
+        }
+    }
+</script>
+{% endblock %}

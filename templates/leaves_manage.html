@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Leave Requests - AMS{% endblock %}
+{% block page_title %}Manage Leaves{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+
+    <!-- Leave Requests Listing table -->
+    <div class="glass-card">
+        <h5 class="font-bold mb-4"><i class="fas fa-file-contract text-primary me-2"></i>Pending and Past Applications</h5>
+        
+        <div class="glass-table-container">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Type</th>
+                        <th>Dates</th>
+                        <th>Duration</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Comments</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in leaves %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="{{ url_for('static', filename='uploads/' + r.employee.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                <div>
+                                    <div class="font-bold small">{{ r.employee.full_name }}</div>
+                                    <span class="text-muted small">{{ r.employee.employee_id }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small font-bold text-primary">{{ r.leave_type }}</td>
+                        <td class="small">{{ r.start_date.strftime('%d-%m-%Y') }} to {{ r.end_date.strftime('%d-%m-%Y') }}</td>
+                        <td class="small font-semibold">{{ ((r.end_date - r.start_date).days + 1) }} Days</td>
+                        <td class="small" title="{{ r.reason }}">{{ r.reason }}</td>
+                        <td>
+                            <span class="status-badge {{ r.status | lower }}">
+                                {{ r.status }}
+                            </span>
+                        </td>
+                        <td class="small text-secondary">{{ r.comments or '-' }}</td>
+                        <td class="text-end">
+                            {% if r.status == 'Pending' %}
+                            <div class="d-flex justify-content-end gap-1">
+                                <button class="btn btn-sm btn-success rounded-circle" data-bs-toggle="modal" data-bs-target="#actionModal{{ r.id }}approve" title="Approve Request">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#actionModal{{ r.id }}reject" title="Reject Request">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- ACTION COMMENTS MODALS -->
+                            <!-- APPROVE MODAL -->
+                            <div class="modal fade" id="actionModal{{ r.id }}approve" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                    <div class="modal-content glass-panel border-0">
+                                        <div class="modal-header border-bottom-0 pb-0">
+                                            <h6 class="modal-title font-bold text-success">Approve Leave Application?</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start pt-3">
+                                            <form action="{{ url_for('main.leave_action', request_id=r.id, action='approve') }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label small font-semibold">Remarks / Comments</label>
+                                                    <textarea name="comments" class="form-control form-control-sm" rows="2" placeholder="e.g. Approved. Cover plan in place."></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-success w-100 py-2">Confirm Approval</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- REJECT MODAL -->
+                            <div class="modal fade" id="actionModal{{ r.id }}reject" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                    <div class="modal-content glass-panel border-0">
+                                        <div class="modal-header border-bottom-0 pb-0">
+                                            <h6 class="modal-title font-bold text-danger">Reject Leave Application?</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start pt-3">
+                                            <form action="{{ url_for('main.leave_action', request_id=r.id, action='reject') }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label small font-semibold">Reason for Rejection *</label>
+                                                    <textarea name="comments" class="form-control form-control-sm" rows="2" placeholder="e.g. Critical launch dates. Denied." required></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-danger w-100 py-2">Confirm Rejection</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% else %}
+                            <span class="text-muted small">Closed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No leave requests found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Attendance Management Portal{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+
+    <!-- ========================================================= -->
+    <!-- 1. ADMIN & HR DASHBOARD VIEW -->
+    <!-- ========================================================= -->
+    {% if role in ['admin', 'hr'] %}
+    <!-- Statistics Cards Rows -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card primary d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Total Employees</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.total_employees }}</h3>
+                </div>
+                <div class="stat-icon text-primary bg-primary-light bg-opacity-15">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card success d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Present Today</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.present_employees }}</h3>
+                </div>
+                <div class="stat-icon text-success">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card danger d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Absent Today</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.absent_employees }}</h3>
+                </div>
+                <div class="stat-icon text-danger">
+                    <i class="fas fa-user-times"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card warning d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Late Entry</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.late_employees }}</h3>
+                </div>
+                <div class="stat-icon text-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Distributions -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Attendance Graph Line -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-bold mb-0">Attendance Analytics</h5>
+                    <span class="text-secondary small font-semibold">Present Count (Recent 7 Days)</span>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="attendanceTrendChart" data-trends='{{ stats.trends | tojson }}'></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Department Doughnut distributions -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="glass-card">
+                <h5 class="font-bold mb-4">Department Ratios</h5>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="deptDistributionChart" data-departments='{{ stats.department_distributions | tojson }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Attendance Breakdown -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <h5 class="font-bold mb-0">Today's Attendance Breakdown</h5>
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-pills gap-1" id="attendanceBreakdownTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active btn-sm rounded-pill font-semibold px-3" id="present-tab" data-bs-toggle="tab" data-bs-target="#present-pane" type="button" role="tab" aria-controls="present-pane" aria-selected="true">
+                                <i class="fas fa-user-check me-2 text-success"></i>Present ({{ stats.present_list | length }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm rounded-pill font-semibold px-3" id="absent-tab" data-bs-toggle="tab" data-bs-target="#absent-pane" type="button" role="tab" aria-controls="absent-pane" aria-selected="false">
+                                <i class="fas fa-user-times me-2 text-danger"></i>Absent ({{ stats.absent_list | length }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm rounded-pill font-semibold px-3" id="late-tab" data-bs-toggle="tab" data-bs-target="#late-pane" type="button" role="tab" aria-controls="late-pane" aria-selected="false">
+                                <i class="fas fa-clock me-2 text-warning"></i>Late ({{ stats.late_list | length }})
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="tab-content" id="attendanceBreakdownTabContent">
+                    <!-- PRESENT PANEL -->
+                    <div class="tab-pane fade show active" id="present-pane" role="tabpanel" aria-labelledby="present-tab">
+                        <div class="glass-table-container">
+                            <table class="glass-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Designation</th>
+                                        <th>Check-In Time</th>
+                                        <th>Check-Out Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in stats.present_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="{{ url_for('static', filename='uploads/' + r.employee.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                                <div>
+                                                    <div class="font-bold small">{{ r.employee.full_name }}</div>
+                                                    <div class="text-secondary small">{{ r.employee.employee_id }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="small">{{ r.employee.department.name if r.employee.department else 'N/A' }}</td>
+                                        <td class="small font-semibold text-primary">{{ r.employee.designation or 'N/A' }}</td>
+                                        <td class="small font-semibold text-success">{{ r.check_in_time.strftime('%H:%M:%S') if r.check_in_time else '-' }}</td>
+                                        <td class="small font-semibold">{{ r.check_out_time.strftime('%H:%M:%S') if r.check_out_time else '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-success bg-opacity-15 text-success rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                {{ r.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-3">No employees checked in as present today yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- ABSENT PANEL -->
+                    <div class="tab-pane fade" id="absent-pane" role="tabpanel" aria-labelledby="absent-tab">
+                        <div class="glass-table-container">
+                            <table class="glass-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Designation</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for emp in stats.absent_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="{{ url_for('static', filename='uploads/' + emp.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                                <div>
+                                                    <div class="font-bold small">{{ emp.full_name }}</div>
+                                                    <div class="text-secondary small">{{ emp.employee_id }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="small">{{ emp.department.name if emp.department else 'N/A' }}</td>
+                                        <td class="small font-semibold text-primary">{{ emp.designation or 'N/A' }}</td>
+                                        <td class="small">{{ emp.email }}</td>
+                                        <td class="small">{{ emp.phone or '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-danger bg-opacity-15 text-danger rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                Absent
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-3">No employees are absent today.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- LATE PANEL -->
+                    <div class="tab-pane fade" id="late-pane" role="tabpanel" aria-labelledby="late-tab">
+                        <div class="glass-table-container">
+                            <table class="glass-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Designation</th>
+                                        <th>Check-In Time</th>
+                                        <th>Hours Worked</th>
+                                        <th>Late Entry Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in stats.late_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="{{ url_for('static', filename='uploads/' + r.employee.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                                <div>
+                                                    <div class="font-bold small">{{ r.employee.full_name }}</div>
+                                                    <div class="text-secondary small">{{ r.employee.employee_id }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="small">{{ r.employee.department.name if r.employee.department else 'N/A' }}</td>
+                                        <td class="small font-semibold text-primary">{{ r.employee.designation or 'N/A' }}</td>
+                                        <td class="small font-bold text-warning">{{ r.check_in_time.strftime('%H:%M:%S') if r.check_in_time else '-' }}</td>
+                                        <td class="small">{{ r.working_hours or '-' }} hrs</td>
+                                        <td>
+                                            <span class="badge bg-warning bg-opacity-15 text-warning rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                Late Entry
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-3">No employees checked in late today.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Logs Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-bold mb-0">Live Activity Feed</h5>
+                    <a href="{{ url_for('main.reports') }}" class="btn btn-sm btn-outline-secondary rounded-pill font-semibold small px-3">View All Logs</a>
+                </div>
+                <div class="glass-table-container">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Hours</th>
+                                <th>Status</th>
+                                <th>GPS Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in stats.recent_activity %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="{{ url_for('static', filename='uploads/' + r.employee.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                        <div>
+                                            <div class="font-bold small">{{ r.employee.full_name }}</div>
+                                            <div class="text-secondary small">{{ r.employee.employee_id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="small">{{ r.date.strftime('%d-%m-%Y') }}</td>
+                                <td class="small font-semibold">{{ r.check_in_time.strftime('%H:%M:%S') if r.check_in_time else '-' }}</td>
+                                <td class="small font-semibold">{{ r.check_out_time.strftime('%H:%M:%S') if r.check_out_time else '-' }}</td>
+                                <td class="small font-bold">{{ r.working_hours or '-' }} hrs</td>
+                                <td>
+                                    <span class="status-badge {{ r.status | lower | replace(' ', '-') }}">
+                                        {{ r.status }}
+                                    </span>
+                                </td>
+                                <td class="small text-secondary">
+                                    {% if r.check_in_lat and r.check_in_lng %}
+                                    <a href="https://www.google.com/maps?q={{ r.check_in_lat }},{{ r.check_in_lng }}" target="_blank" class="text-decoration-none">
+                                        <i class="fas fa-map-marker-alt text-primary"></i> Map Location
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No attendance logs submitted today yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 2. EMPLOYEE DASHBOARD VIEW -->
+    <!-- ========================================================= -->
+    {% else %}
+    <!-- Welcome Header Card -->
+    <div class="glass-card mb-4 p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-4">
+            <img src="{{ url_for('static', filename='uploads/' + stats.employee.profile_pic) }}" class="rounded-circle border border-4 border-primary-light" style="width: 80px; height: 80px; object-fit: cover;" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+            <div>
+                <h4 class="font-bold mb-1">Hello, {{ stats.employee.first_name }}!</h4>
+                <p class="text-secondary small mb-0">{{ stats.employee.designation }} | {{ stats.employee.department.name if stats.employee.department else 'No Department' }}</p>
+                <span class="text-muted small font-semibold">Employee Code: {{ stats.employee.employee_id }}</span>
+            </div>
+        </div>
+        
+        <!-- Live Action Status Button -->
+        <div class="text-md-end">
+            {% if not stats.today_attendance %}
+            <a href="{{ url_for('main.attendance') }}" class="btn btn-primary px-4 py-3"><i class="fas fa-sign-in-alt me-2"></i> Register Check-In</a>
+            {% elif stats.today_attendance and not stats.today_attendance.check_out_time %}
+            <a href="{{ url_for('main.attendance') }}" class="btn btn-warning px-4 py-3 text-white"><i class="fas fa-sign-out-alt me-2"></i> Register Check-Out</a>
+            {% else %}
+            <div class="glass-panel p-3 border-success text-success d-inline-flex align-items-center gap-2 rounded-pill font-semibold">
+                <i class="fas fa-check-circle"></i> Work Hours Logged Today
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Employee Stats counters -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card primary d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Worked This Month</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.total_working_hours }} hrs</h3>
+                </div>
+                <div class="stat-icon text-primary">
+                    <i class="fas fa-business-time"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card success d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Days Present</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.present_days }}</h3>
+                </div>
+                <div class="stat-icon text-success">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card warning d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Late Logs</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.late_days }}</h3>
+                </div>
+                <div class="stat-icon text-warning">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="glass-card stat-card info d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-secondary small font-semibold">Leave Balance</span>
+                    <h3 class="font-bold mb-0 mt-1">{{ stats.leave_balance }} Days</h3>
+                </div>
+                <div class="stat-icon text-info">
+                    <i class="fas fa-plane-departure"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Recent personal attendance logs -->
+        <div class="col-xl-8">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-bold mb-0">My Recent Logs</h5>
+                    <a href="{{ url_for('main.reports') }}" class="text-primary text-decoration-none font-semibold small">View History</a>
+                </div>
+                
+                <div class="glass-table-container">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Working Hours</th>
+                                <th>Overtime</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for act in stats.recent_activities %}
+                            <tr>
+                                <td class="font-semibold">{{ act.date.strftime('%B %d, %Y') }}</td>
+                                <td class="small">{{ act.check_in_time.strftime('%I:%M %p') if act.check_in_time else '-' }}</td>
+                                <td class="small">{{ act.check_out_time.strftime('%I:%M %p') if act.check_out_time else '-' }}</td>
+                                <td class="small font-bold">{{ act.working_hours or '-' }} hrs</td>
+                                <td class="small text-secondary">{{ act.overtime or '-' }} hrs</td>
+                                <td>
+                                    <span class="status-badge {{ act.status | lower | replace(' ', '-') }}">
+                                        {{ act.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if act.check_in_time %}
+                                    <a href="{{ url_for('main.download_certificate', att_id=act.id) }}" class="btn btn-sm btn-outline-primary rounded-pill small py-1 px-3">Certificate</a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No attendance logs recorded in this system.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notifications Stream Widgets -->
+        <div class="col-xl-4">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-bold mb-0">Notifications</h5>
+                    {% if stats.unread_notifications %}
+                    <button onclick="markAllNotificationsRead()" class="btn btn-sm text-primary p-0 font-semibold border-0 bg-transparent">Mark Read</button>
+                    {% endif %}
+                </div>
+                
+                <div class="notifications-list" style="max-height: 320px; overflow-y: auto;">
+                    {% for notif in stats.unread_notifications %}
+                    <div class="glass-panel p-3 mb-2 rounded border-start border-primary border-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="font-bold small text-primary">{{ notif.title }}</span>
+                            <span class="text-muted small" style="font-size: 0.75rem;">{{ notif.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                        <p class="text-secondary small mb-0">{{ notif.message }}</p>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-bell-slash mb-2 fs-3 text-secondary opacity-50"></i>
+                        <p class="small mb-0">You are all caught up!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Dashboard Specific Scripts -->
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // JS trigger action to clear notifications on dashboard view
+    async function markAllNotificationsRead() {
+        const response = await postData('/notifications/read-all');
+        if (response.success) {
+            showToast("Notifications cleared", "success");
+            setTimeout(() => location.reload(), 1000);
+        }
+    }
+</script>
+{% endblock %}

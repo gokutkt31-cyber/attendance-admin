@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Employees - Attendance System{% endblock %}
+{% block page_title %}Manage Employees{% endblock %}
+
+{% block content %}
+<div class="container-fluid" data-aos="fade-up">
+
+    <!-- Action buttons row -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h5 class="font-bold mb-0">Active Directory</h5>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('main.export_employees_excel') }}" class="btn btn-sm btn-outline-primary rounded-pill font-semibold px-3">
+                <i class="fas fa-file-excel me-2"></i>Export Excel
+            </a>
+            <a href="{{ url_for('main.export_employees_csv') }}" class="btn btn-sm btn-outline-success rounded-pill font-semibold px-3">
+                <i class="fas fa-file-csv me-2"></i>Export CSV
+            </a>
+            <button class="btn btn-sm btn-primary rounded-pill font-semibold px-3" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                <i class="fas fa-user-plus me-2"></i>Add Employee
+            </button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill font-semibold px-3" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+                <i class="fas fa-folder-plus me-2"></i>Add Department
+            </button>
+        </div>
+    </div>
+
+    <!-- Departments quick overview -->
+    <div class="row g-3 mb-4">
+        {% for d in departments %}
+        <div class="col-md-3 col-sm-6">
+            <div class="glass-card p-3 mb-0 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="font-bold text-secondary mb-0 small">{{ d.name }}</h6>
+                    <span class="text-muted small">{{ d.employees | length }} Members</span>
+                </div>
+                <span class="badge bg-primary rounded-pill">{{ d.code }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Employees Glass table list -->
+    <div class="glass-card">
+        <div class="glass-table-container">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th>Contact</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="{{ url_for('static', filename='uploads/' + emp.profile_pic) }}" class="avatar-sm rounded-circle" onerror="this.src='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/icons/person-circle.svg'" alt="profile">
+                                <div>
+                                    <div class="font-bold small">{{ emp.full_name }}</div>
+                                    <span class="text-muted small">{{ emp.employee_id }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">{{ emp.department.name if emp.department else 'N/A' }}</td>
+                        <td class="small font-semibold text-primary">{{ emp.designation or 'N/A' }}</td>
+                        <td class="small">
+                            <div>{{ emp.email }}</div>
+                            <div class="text-secondary small">{{ emp.phone or '-' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if emp.status == 'active' %}success{% else %}danger{% endif %} bg-opacity-15 text-{% if emp.status == 'active' %}success{% else %}danger{% endif %} uppercase tracking-wider rounded-pill px-2 py-1" style="font-size: 0.65rem;">
+                                {{ emp.status }}
+                            </span>
+                        </td>
+                        <td class="small text-secondary">{{ emp.date_of_joining.strftime('%d-%m-%Y') }}</td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{{ url_for('main.generate_id_card', emp_id=emp.id) }}" class="btn btn-sm btn-outline-secondary rounded-circle" title="View Digital ID Badge">
+                                    <i class="fas fa-id-card"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#editEmployeeModal{{ emp.id }}" title="Edit Info">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if current_user.role == 'admin' %}
+                                <button onclick="triggerDeleteEmployee('{{ emp.id }}', '{{ emp.full_name }}')" class="btn btn-sm btn-outline-danger rounded-circle" title="Remove Profile">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <form id="delete-form-{{ emp.id }}" action="{{ url_for('main.delete_employee', emp_id=emp.id) }}" method="POST" style="display:none;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+
+
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No employees registered yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+    <!-- ADD EMPLOYEE MODAL -->
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel border-0 shadow-sm">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title font-bold">Add New Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form id="addEmployeeForm" action="{{ url_for('main.add_employee') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">First Name *</label>
+                                <input type="text" name="first_name" class="form-control form-control-sm" placeholder="Enter first name" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Last Name *</label>
+                                <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Enter last name" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small font-semibold">Email *</label>
+                            <input type="email" name="email" class="form-control form-control-sm" placeholder="employee@company.com" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Username *</label>
+                                <input type="text" name="username" class="form-control form-control-sm" placeholder="Create username" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Password *</label>
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Create password" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Designation</label>
+                                <input type="text" name="designation" class="form-control form-control-sm" placeholder="e.g. Sales Associate">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Department</label>
+                                <select name="department_id" class="form-select form-select-sm">
+                                    {% for d in departments %}
+                                    <option value="{{ d.id }}">{{ d.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small font-semibold">Phone Number *</label>
+                            <input type="text" name="phone" class="form-control form-control-sm" placeholder="e.g. 9876543210" maxlength="10" minlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small font-semibold">Account Role</label>
+                            <select name="role" class="form-select form-select-sm">
+                                <option value="employee">Employee</option>
+                                <option value="hr">HR Manager</option>
+                                <option value="admin">System Admin</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 py-2">Create Employee</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD DEPARTMENT MODAL -->
+    <div class="modal fade" id="addDeptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel border-0 shadow-sm">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title font-bold">Add New Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form action="{{ url_for('main.add_department') }}" method="POST">
+                        {{ dept_form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label small font-semibold">Department Name *</label>
+                            {{ dept_form.name(class="form-control form-control-sm", placeholder="e.g. Human Resources") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small font-semibold">Department Code *</label>
+                            {{ dept_form.code(class="form-control form-control-sm", placeholder="e.g. HR") }}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label small font-semibold">Description</label>
+                            {{ dept_form.description(class="form-control form-control-sm", rows=3, placeholder="Brief details about duties") }}
+                        </div>
+                        
+                        {{ dept_form.submit(class="btn btn-primary w-100 py-2") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT EMPLOYEE MODALS -->
+    {% for emp in employees %}
+    <div class="modal fade" id="editEmployeeModal{{ emp.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel border-0 shadow-sm">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title font-bold">Edit {{ emp.full_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form class="edit-employee-form" action="{{ url_for('main.edit_employee', emp_id=emp.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">First Name</label>
+                                <input type="text" name="first_name" class="form-control form-control-sm" value="{{ emp.first_name }}" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Last Name</label>
+                                <input type="text" name="last_name" class="form-control form-control-sm" value="{{ emp.last_name }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small font-semibold">Phone Number *</label>
+                            <input type="text" name="phone" class="form-control form-control-sm" value="{{ emp.phone or '' }}" placeholder="Enter 10-digit number" maxlength="10" minlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Designation</label>
+                                <input type="text" name="designation" class="form-control form-control-sm" value="{{ emp.designation or '' }}">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Department</label>
+                                <select name="department_id" class="form-select form-select-sm">
+                                    {% for d in departments %}
+                                    <option value="{{ d.id }}" {% if emp.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Home Latitude</label>
+                                <input type="number" step="any" name="location_lat" class="form-control form-control-sm" value="{{ emp.location_lat or '' }}">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label small font-semibold">Home Longitude</label>
+                                <input type="number" step="any" name="location_lng" class="form-control form-control-sm" value="{{ emp.location_lng or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small font-semibold">Account Status</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="active" {% if emp.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if emp.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 py-2">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function triggerDeleteEmployee(empId, empName) {
+        confirmDelete(
+            'Delete Employee Profile?',
+            `Are you sure you want to permanently delete user account and active database records for ${empName}? This action cannot be undone.`,
+            'Yes, delete',
+            () => {
+                document.getElementById(`delete-form-${empId}`).submit();
+            }
+        );
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Handler for Add Employee Form
+        const addForm = document.getElementById('addEmployeeForm');
+        if (addForm) {
+            addForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(addForm);
+                
+                try {
+                    const response = await fetch(addForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        // Success: reload to show changes
+                        window.location.reload();
+                    } else {
+                        // Failure: show toast alert, keep modal open
+                        showToast(result.message || 'Validation failed.', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    showToast('An unexpected error occurred. Please try again.', 'danger');
+                }
+            });
+        }
+
+        // Handler for Edit Employee Forms
+        const editForms = document.querySelectorAll('.edit-employee-form');
+        editForms.forEach(form => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        // Success: reload to show changes
+                        window.location.reload();
+                    } else {
+                        // Failure: show toast alert, keep modal open
+                        showToast(result.message || 'Validation failed.', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    showToast('An unexpected error occurred. Please try again.', 'danger');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
