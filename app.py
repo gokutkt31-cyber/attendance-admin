@@ -85,38 +85,83 @@ def create_app(config_class=Config):
 
 
 def _seed_initial_data():
-    """Seed default admin user and departments if the database is empty (first deploy)."""
+    """Seed default admin, HR, sample employees and departments on first deploy."""
     from flask_bcrypt import generate_password_hash
-    from models import User, Department
+    from datetime import date
+    import jwt as pyjwt
+    from models import User, Department, Employee
     from database import db
 
     # Only seed if no users exist
     if User.query.first():
         return
 
-    print("[SEED] No users found. Seeding default admin account and departments...")
+    print("[SEED] No users found. Seeding demo data...")
 
-    # Create default departments
-    departments = [
-        Department(name="Engineering", code="ENG", description="Software & Systems Engineering"),
-        Department(name="Human Resources", code="HR", description="HR & People Operations"),
-        Department(name="Sales", code="SAL", description="Sales & Business Development"),
-    ]
-    for dept in departments:
-        db.session.add(dept)
+    # ── Departments ───────────────────────────────────────────
+    eng  = Department(name="Engineering",      code="ENG", description="Software & Systems Engineering")
+    hr   = Department(name="Human Resources",  code="HR",  description="HR & People Operations")
+    sal  = Department(name="Sales",            code="SAL", description="Sales & Business Development")
+    mkt  = Department(name="Marketing",        code="MKT", description="Marketing & Brand")
+    for d in [eng, hr, sal, mkt]:
+        db.session.add(d)
+    db.session.flush()  # get dept IDs
 
-    # Create default admin user
+    # ── Admin user ────────────────────────────────────────────
     admin_pw = generate_password_hash("admin123").decode("utf-8")
-    admin = User(
-        username="admin",
-        email="admin@ams.com",
-        password_hash=admin_pw,
-        role="admin",
-        is_active=True,
-    )
+    admin = User(username="admin", email="admin@ams.com",
+                 password_hash=admin_pw, role="admin", is_active=True)
     db.session.add(admin)
+
+    # ── HR user ───────────────────────────────────────────────
+    hr_pw = generate_password_hash("hr1234").decode("utf-8")
+    hr_user = User(username="hrmanager", email="hr@ams.com",
+                   password_hash=hr_pw, role="hr", is_active=True)
+    db.session.add(hr_user)
+    db.session.flush()
+
+    # Add HR employee profile
+    hr_emp = Employee(
+        user_id=hr_user.id, employee_id="EMP-2026-0001",
+        first_name="Priya", last_name="Sharma",
+        email="hr@ams.com", phone="9876543210",
+        department_id=hr.id, designation="HR Manager",
+        date_of_joining=date(2024, 1, 15), status="active",
+    )
+    db.session.add(hr_emp)
+
+    # ── Sample employee users + profiles ─────────────────────
+    sample_employees = [
+        # (username, email, password,  fname,    lname,      dept,   designation,              joining,             phone)
+        ("rajesh_k",   "rajesh@ams.com",   "emp123", "Rajesh",   "Kumar",     eng,  "Senior Developer",       date(2023, 3, 1),  "9000000001"),
+        ("anita_v",    "anita@ams.com",    "emp123", "Anita",    "Verma",     eng,  "Frontend Engineer",       date(2023, 6, 15), "9000000002"),
+        ("suresh_p",   "suresh@ams.com",   "emp123", "Suresh",   "Patel",     sal,  "Sales Executive",         date(2024, 2, 1),  "9000000003"),
+        ("meena_r",    "meena@ams.com",    "emp123", "Meena",    "Reddy",     sal,  "Sales Manager",           date(2022, 11, 1), "9000000004"),
+        ("kiran_d",    "kiran@ams.com",    "emp123", "Kiran",    "Das",       mkt,  "Marketing Analyst",       date(2024, 4, 10), "9000000005"),
+        ("pooja_m",    "pooja@ams.com",    "emp123", "Pooja",    "Mishra",    mkt,  "Content Strategist",      date(2023, 9, 20), "9000000006"),
+        ("amit_s",     "amit@ams.com",     "emp123", "Amit",     "Singh",     eng,  "Backend Engineer",        date(2025, 1, 5),  "9000000007"),
+        ("lakshmi_n",  "lakshmi@ams.com",  "emp123", "Lakshmi",  "Nair",      hr,   "Recruitment Specialist",  date(2024, 7, 1),  "9000000008"),
+    ]
+
+    for idx, (uname, email, pw, fname, lname, dept, desig, joined, phone) in enumerate(sample_employees, start=2):
+        emp_pw = generate_password_hash(pw).decode("utf-8")
+        user = User(username=uname, email=email, password_hash=emp_pw,
+                    role="employee", is_active=True)
+        db.session.add(user)
+        db.session.flush()
+
+        emp_code = f"EMP-2026-{idx:04d}"
+        emp = Employee(
+            user_id=user.id, employee_id=emp_code,
+            first_name=fname, last_name=lname,
+            email=email, phone=phone,
+            department_id=dept.id, designation=desig,
+            date_of_joining=joined, status="active",
+        )
+        db.session.add(emp)
+
     db.session.commit()
-    print("[SEED] Default admin created: username=admin, password=admin123")
+    print("[SEED] Demo data seeded: admin/admin123 | hrmanager/hr1234 | employees: emp123")
 
 
 if __name__ == '__main__':
