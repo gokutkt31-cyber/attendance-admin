@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: employee-attendance-portal
     env: python
@@ -17,3 +17,7 @@
         value: production
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: RENDER
+        value: true
+      - key: UPLOAD_FOLDER
+        value: /tmp/uploads

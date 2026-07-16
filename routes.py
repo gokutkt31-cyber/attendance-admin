@@ -104,15 +104,19 @@ def login():
             login_user(user, remember=form.remember.data)
             flash(f"Welcome back, {user.username}!", "success")
             
-            # Create a check-in notification for employee or admin
-            notif = Notification(
-                user_id=user.id,
-                title="System Login",
-                message=f"You successfully logged into the Attendance System at {datetime.now().strftime('%H:%M:%S')}",
-                type="system"
-            )
-            db.session.add(notif)
-            db.session.commit()
+            # Create a login notification (non-critical — wrapped in try/except)
+            try:
+                notif = Notification(
+                    user_id=user.id,
+                    title="System Login",
+                    message=f"You successfully logged into the Attendance System at {datetime.now().strftime('%H:%M:%S')}",
+                    type="system"
+                )
+                db.session.add(notif)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.warning(f"Could not save login notification: {e}")
             
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.dashboard'))

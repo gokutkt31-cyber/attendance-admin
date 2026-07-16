@@ -22,7 +22,11 @@ class Config:
     DB_TYPE = os.environ.get('DB_TYPE', 'mysql')
     
     if DB_TYPE == 'sqlite':
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'attendance.db')}"
+        # On Render / cloud: use /tmp for writable SQLite storage
+        # In local dev: use the project directory
+        _is_render = os.environ.get('RENDER') == 'true'
+        _sqlite_path = '/tmp/attendance.db' if _is_render else os.path.join(BASE_DIR, 'attendance.db')
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{_sqlite_path}"
     else:
         # mysql+pymysql://username:password@host/dbname
         SQLALCHEMY_DATABASE_URI = os.environ.get(
@@ -45,8 +49,8 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@employeeattendance.com')
     
-    # File Upload Directory
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
+    # File Upload Directory — use env var override for cloud deployments (e.g. Render /tmp/uploads)
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'static', 'uploads'))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB limit
     
     # App Settings
