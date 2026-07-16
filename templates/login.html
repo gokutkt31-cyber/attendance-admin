@@ -1,64 +1,515 @@
 {% extends 'base.html' %}
 
-{% block title %}Log In - Attendance Management System{% endblock %}
+{% block title %}Sign In — AMS Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Login Page Overrides ─────────────────────────────── */
+  .content-body {
+    padding: 0;
+    height: 100%;
+  }
+
+  .login-page {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  /* ── Left Brand Panel ─────────────────────────────────── */
+  .login-brand-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 48px;
+    background: linear-gradient(145deg, hsl(222,89%,20%) 0%, hsl(260,85%,28%) 50%, hsl(222,89%,15%) 100%);
+    position: relative;
+    overflow: hidden;
+    gap: 32px;
+  }
+
+  .login-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: -20%;
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%);
+    animation: panelFloat 12s infinite alternate ease-in-out;
+  }
+
+  .login-brand-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    right: -20%;
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%);
+    animation: panelFloat 16s infinite alternate-reverse ease-in-out;
+  }
+
+  @keyframes panelFloat {
+    0%   { transform: translate(0,0) scale(1); }
+    100% { transform: translate(30px, 40px) scale(1.08); }
+  }
+
+  .brand-logo-wrap {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .brand-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #fff;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+
+  .brand-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-tagline {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 1rem;
+    max-width: 340px;
+    line-height: 1.7;
+  }
+
+  .brand-features {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 16px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .brand-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 14px 18px;
+    backdrop-filter: blur(8px);
+    transition: background 0.3s ease, transform 0.3s ease;
+  }
+
+  .brand-feature-item:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateX(4px);
+  }
+
+  .brand-feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .brand-feature-text strong {
+    display: block;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .brand-feature-text span {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.78rem;
+  }
+
+  /* ── Right Form Panel ─────────────────────────────────── */
+  .login-form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 48px;
+  }
+
+  .login-form-inner {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .login-form-header {
+    margin-bottom: 36px;
+  }
+
+  .login-greeting {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .login-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  /* Input fields */
+  .login-field {
+    margin-bottom: 20px;
+  }
+
+  .login-field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+
+  .login-input-wrap {
+    position: relative;
+  }
+
+  .login-input-wrap .field-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: color 0.3s ease;
+  }
+
+  .login-input-wrap input {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    backdrop-filter: blur(5px);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    outline: none;
+  }
+
+  .login-input-wrap input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .login-input-wrap input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+    background: var(--glass-bg);
+  }
+
+  .login-input-wrap input:focus + .field-icon,
+  .login-input-wrap:focus-within .field-icon {
+    color: var(--primary);
+  }
+
+  /* Password toggle */
+  .pw-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+  .pw-toggle:hover { color: var(--primary); }
+
+  /* Remember + Forgot */
+  .login-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.87rem;
+    color: var(--text-secondary);
+  }
+
+  .login-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .login-forgot {
+    font-size: 0.87rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .login-forgot:hover { opacity: 0.75; }
+
+  /* Submit button */
+  .login-btn {
+    width: 100%;
+    padding: 15px 24px;
+    background: linear-gradient(135deg, var(--primary) 0%, hsl(260,85%,55%) 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font-primary);
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+  }
+
+  .login-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(99,102,241,0.5);
+  }
+
+  .login-btn:hover::before { left: 100%; }
+
+  .login-btn:active { transform: translateY(0); }
+
+  /* Sign-up link */
+  .login-signup-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .login-signup-link a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+  .login-signup-link a:hover { opacity: 0.75; }
+
+  /* Error hints */
+  .field-error {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Divider */
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--glass-border);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .login-brand-panel { display: none; }
+    .login-form-panel  { padding: 40px 24px; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
-    <div class="glass-card w-100 p-4 p-md-5" style="max-width: 450px;" data-aos="zoom-in">
-        <div class="text-center mb-4">
-            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style="width: 60px; height: 60px; font-size: 1.75rem;">
-                <i class="fas fa-fingerprint"></i>
-            </div>
-            <h2 class="h3 font-bold mb-1" style="font-family: var(--font-heading)">Welcome Back</h2>
-            <p class="text-muted small">Sign in to log daily presence and request leaves.</p>
+<div class="login-page">
+
+  <!-- ── Left: Brand Panel ── -->
+  <div class="login-brand-panel" data-aos="fade-right">
+    <div class="brand-logo-wrap">
+      <div class="brand-icon">
+        <i class="fas fa-fingerprint"></i>
+      </div>
+      <span class="brand-name">AMS Portal</span>
+    </div>
+
+    <p class="brand-tagline">
+      Streamline your workforce attendance, leaves, and reports — all in one beautiful place.
+    </p>
+
+    <div class="brand-features">
+      <div class="brand-feature-item">
+        <div class="brand-feature-icon"><i class="fas fa-camera"></i></div>
+        <div class="brand-feature-text">
+          <strong>Selfie Check-In</strong>
+          <span>Verify presence with real-time photo capture</span>
+        </div>
+      </div>
+      <div class="brand-feature-item">
+        <div class="brand-feature-icon"><i class="fas fa-calendar-check"></i></div>
+        <div class="brand-feature-text">
+          <strong>Leave Management</strong>
+          <span>Apply, approve & track leaves effortlessly</span>
+        </div>
+      </div>
+      <div class="brand-feature-item">
+        <div class="brand-feature-icon"><i class="fas fa-chart-bar"></i></div>
+        <div class="brand-feature-text">
+          <strong>Detailed Reports</strong>
+          <span>Export attendance audits as PDF or Excel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right: Form Panel ── -->
+  <div class="login-form-panel" data-aos="fade-left">
+    <div class="login-form-inner">
+
+      <div class="login-form-header">
+        <h1 class="login-greeting">Welcome back 👋</h1>
+        <p class="login-subtitle">Sign in to your account to continue</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('main.login') }}" novalidate id="login-form">
+        {{ form.hidden_tag() }}
+
+        <!-- Username -->
+        <div class="login-field">
+          <label for="username">Username</label>
+          <div class="login-input-wrap">
+            {{ form.username(id="username", placeholder="Enter your username", autocomplete="username") }}
+            <i class="fas fa-user field-icon"></i>
+          </div>
+          {% if form.username.errors %}
+            {% for error in form.username.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          {% endif %}
         </div>
 
-        <form method="POST" action="{{ url_for('main.login') }}">
-            {{ form.hidden_tag() }}
-            
-            <div class="mb-3">
-                <label for="username" class="form-label font-semibold small">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-user"></i></span>
-                    {{ form.username(class="form-control border-start-0 ps-0", id="username", placeholder="Enter username") }}
-                </div>
-                {% if form.username.errors %}
-                    {% for error in form.username.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            
-            <div class="mb-3">
-                <label for="password" class="form-label font-semibold small">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-lock"></i></span>
-                    {{ form.password(class="form-control border-start-0 ps-0", id="password", placeholder="Enter password") }}
-                </div>
-                {% if form.password.errors %}
-                    {% for error in form.password.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-            
-            <div class="d-flex align-items-center justify-content-between mb-4">
-                <div class="form-check">
-                    {{ form.remember(class="form-check-input", id="remember") }}
-                    <label class="form-check-label text-secondary small" for="remember">
-                        Remember Me
-                    </label>
-                </div>
-                <a href="{{ url_for('main.forgot_password') }}" class="text-primary small text-decoration-none font-semibold">Forgot Password?</a>
-            </div>
-            
-            {{ form.submit(class="btn btn-primary w-100 py-3") }}
-        </form>
-        
-        <div class="text-center mt-4">
-            <span class="text-secondary small">Don't have an account? </span>
-            <a href="{{ url_for('main.register') }}" class="text-primary font-semibold small text-decoration-none">Sign Up Here</a>
+        <!-- Password -->
+        <div class="login-field">
+          <label for="password">Password</label>
+          <div class="login-input-wrap">
+            {{ form.password(id="password", placeholder="Enter your password", autocomplete="current-password") }}
+            <i class="fas fa-lock field-icon"></i>
+            <button type="button" class="pw-toggle" id="pw-toggle" title="Show/Hide password">
+              <i class="fas fa-eye" id="pw-toggle-icon"></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+            {% for error in form.password.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          {% endif %}
         </div>
+
+        <!-- Remember + Forgot -->
+        <div class="login-meta">
+          <label class="login-remember">
+            {{ form.remember(id="remember") }}
+            Remember me
+          </label>
+          <a href="{{ url_for('main.forgot_password') }}" class="login-forgot">Forgot password?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="login-btn" id="login-submit">
+          <span id="btn-text">Sign In</span>
+        </button>
+      </form>
+
+      <div class="login-signup-link">
+        Don't have an account? <a href="{{ url_for('main.register') }}">Create one here</a>
+      </div>
+
     </div>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Password show/toggle
+  const pwInput   = document.getElementById('password');
+  const pwToggle  = document.getElementById('pw-toggle');
+  const pwIcon    = document.getElementById('pw-toggle-icon');
+
+  pwToggle.addEventListener('click', () => {
+    const isText = pwInput.type === 'text';
+    pwInput.type = isText ? 'password' : 'text';
+    pwIcon.className = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+  });
+
+  // Shimmer effect on submit
+  const form    = document.getElementById('login-form');
+  const btnText = document.getElementById('btn-text');
+  form.addEventListener('submit', () => {
+    btnText.innerHTML = '<i class="fas fa-circle-notch fa-spin me-2"></i>Signing in…';
+  });
+</script>
 {% endblock %}

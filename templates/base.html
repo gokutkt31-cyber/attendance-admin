@@ -115,7 +115,7 @@
         {% endif %}
 
         <!-- Main View Area -->
-        <main class="main-content">
+        <main class="main-content{% if not current_user.is_authenticated %} no-sidebar{% endif %}">
             <!-- Navbar Header -->
             {% if current_user.is_authenticated %}
             <nav class="top-navbar" data-aos="fade-down">
